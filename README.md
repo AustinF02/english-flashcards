@@ -1,5 +1,7 @@
 # Conf English — AWS conference vocabulary flashcards
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A small, fast flashcards web app for studying English vocabulary used at AWS conferences
 (technical terms and conference small-talk). Study and quiz work in the browser with no account;
 an optional invite-only sign-in adds progress sync across devices.
