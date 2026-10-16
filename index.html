@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!--
+    Content-Security-Policy. The policy below is complete and valid as written: public study and
+    quiz work with connect-src 'self' because the API is same-origin (/api via CloudFront).
+    Hosted-UI sign-in additionally performs an XHR to your Cognito OAuth2 token endpoint, so to
+    enable sign-in, append that origin to connect-src at deploy time, e.g.
+      connect-src 'self' https://<your-cognito-prefix>.auth.<region>.amazoncognito.com
+    Left as-is, the site is fully usable for public study and sign-in is simply unavailable.
+    See README.md "Configuration".
+  -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; media-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'" />
+  <title>Conf English — AWS conference vocabulary</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header class="app-head">
+    <div class="brand"><span class="mark" aria-hidden="true"></span> Conf English</div>
+  </header>
+  <main id="app" aria-live="polite"><!-- rendered by app.ts --></main>
+  <script type="module" src="/src/app.ts"></script>
+</body>
+</html>

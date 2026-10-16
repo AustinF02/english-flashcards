@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-lambda/
+*.log
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/
+tsconfig.tsbuildinfo
+# Never publish runtime config (holds account-specific ids/URLs) or env files
+config.json
+public/config.json
+.env
+.env.*

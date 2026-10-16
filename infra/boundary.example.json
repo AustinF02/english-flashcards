@@ -1,0 +1,25 @@
+{
+  "_comment": "EXAMPLE IAM permissions-boundary policy for the Lambda execution role. This is a PREREQUISITE for cloudformation.yaml (passed as the PermissionsBoundaryArn parameter); the stack does NOT create it. Replace <region>, <account-id>, and resource names to match your deployment, create it as a customer-managed policy, then pass its ARN. No real account id, region, or resource ids are included here.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ProgressTableItemsOnly",
+      "Effect": "Allow",
+      "Action": ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"],
+      "Resource": "arn:aws:dynamodb:<region>:<account-id>:table/english-flashcards-progress"
+    },
+    {
+      "Sid": "DeleteUsersOnlyInProjectTaggedPool",
+      "Effect": "Allow",
+      "Action": "cognito-idp:AdminDeleteUser",
+      "Resource": "arn:aws:cognito-idp:<region>:<account-id>:userpool/*",
+      "Condition": { "StringEquals": { "aws:ResourceTag/project": "english-flashcards" } }
+    },
+    {
+      "Sid": "OwnLogStreamOnly",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:<region>:<account-id>:log-group:/aws/lambda/english-flashcards-progress:*"
+    }
+  ]
+}

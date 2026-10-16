@@ -1,0 +1,166 @@
+{
+  "_doc": "Shared behaviour vectors. BOTH src/progress.ts and backend/handler.py must satisfy every case. Clocks are never an input: any clientTime field is ignored.",
+  "cases": [
+    {
+      "name": "a new device's first op applies",
+      "initial": {},
+      "ops": [{"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t01", "status": "known", "baseRev": 0}],
+      "results": ["applied"],
+      "expect": {"version": 1, "cards": {"t01": {"status": "known", "rev": 1}}, "devices": [["A", 1]]}
+    },
+    {
+      "name": "a replayed op is a duplicate and changes nothing (version unchanged)",
+      "initial": {"version": 1, "cards": {"t01": {"status": "known", "rev": 1}}, "devices": [["A", 1]]},
+      "ops": [{"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t01", "status": "known", "baseRev": 0}],
+      "results": ["duplicate"],
+      "expect": {"version": 1, "cards": {"t01": {"status": "known", "rev": 1}}, "devices": [["A", 1]]}
+    },
+    {
+      "name": "fast-clock device arrives first: it wins, the slow-clock device is stale",
+      "initial": {},
+      "ops": [
+        {"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t01", "status": "known", "baseRev": 0, "clientTime": 9999999999999},
+        {"kind": "status", "deviceId": "B", "seq": 1, "cardId": "t01", "status": "learning", "baseRev": 0, "clientTime": 1}
+      ],
+      "results": ["applied", "stale"],
+      "expect": {"version": 1, "cards": {"t01": {"status": "known", "rev": 1}}, "devices": [["A", 1], ["B", 1]]}
+    },
+    {
+      "name": "same ops, opposite arrival order and swapped clocks: outcome follows arrival, not clocks",
+      "initial": {},
+      "ops": [
+        {"kind": "status", "deviceId": "B", "seq": 1, "cardId": "t01", "status": "learning", "baseRev": 0, "clientTime": 9999999999999},
+        {"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t01", "status": "known", "baseRev": 0, "clientTime": 1}
+      ],
+      "results": ["applied", "stale"],
+      "expect": {"version": 1, "cards": {"t01": {"status": "learning", "rev": 1}}, "devices": [["B", 1], ["A", 1]]}
+    },
+    {
+      "name": "a delayed offline op on a card nobody else touched still applies",
+      "initial": {"version": 2, "cards": {"t01": {"status": "known", "rev": 1}}, "devices": [["B", 1]]},
+      "ops": [{"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t02", "status": "learning", "baseRev": 0}],
+      "results": ["applied"],
+      "expect": {"version": 3, "cards": {"t01": {"status": "known", "rev": 1}, "t02": {"status": "learning", "rev": 1}}}
+    },
+    {
+      "name": "a delayed offline op on a card changed since is stale and cannot overwrite the newer decision",
+      "initial": {"version": 3, "cards": {"t01": {"status": "learning", "rev": 2}}, "devices": [["B", 2]]},
+      "ops": [{"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t01", "status": "known", "baseRev": 1}],
+      "results": ["stale"],
+      "expect": {"version": 4, "cards": {"t01": {"status": "learning", "rev": 2}}, "devices": [["B", 2], ["A", 1]]}
+    },
+    {
+      "name": "concurrent updates to different cards from two devices both apply",
+      "initial": {},
+      "ops": [
+        {"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t01", "status": "known", "baseRev": 0},
+        {"kind": "status", "deviceId": "B", "seq": 1, "cardId": "t02", "status": "learning", "baseRev": 0}
+      ],
+      "results": ["applied", "applied"],
+      "expect": {"cards": {"t01": {"status": "known", "rev": 1}, "t02": {"status": "learning", "rev": 1}}}
+    },
+    {
+      "name": "two sequential decisions on one card from one device use a rising baseRev",
+      "initial": {},
+      "ops": [
+        {"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t01", "status": "known", "baseRev": 0},
+        {"kind": "status", "deviceId": "A", "seq": 2, "cardId": "t01", "status": "learning", "baseRev": 1}
+      ],
+      "results": ["applied", "applied"],
+      "expect": {"cards": {"t01": {"status": "learning", "rev": 2}}, "devices": [["A", 2]]}
+    },
+    {
+      "name": "a second op built on an out-of-date baseRev in the same batch is stale",
+      "initial": {},
+      "ops": [
+        {"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t01", "status": "known", "baseRev": 0},
+        {"kind": "status", "deviceId": "A", "seq": 2, "cardId": "t01", "status": "learning", "baseRev": 0}
+      ],
+      "results": ["applied", "stale"],
+      "expect": {"cards": {"t01": {"status": "known", "rev": 1}}}
+    },
+    {
+      "name": "each quiz op counts exactly once",
+      "initial": {},
+      "ops": [
+        {"kind": "quiz", "deviceId": "A", "seq": 1, "cardId": "t01", "correct": true},
+        {"kind": "quiz", "deviceId": "A", "seq": 2, "cardId": "t01", "correct": false}
+      ],
+      "results": ["applied", "applied"],
+      "expect": {"quiz": {"t01": {"seen": 2, "correct": 1}}}
+    },
+    {
+      "name": "a quiz op replayed long after thousands of later ops is still a duplicate (no 200-op eviction)",
+      "initial": {"version": 9, "quiz": {"t01": {"seen": 5, "correct": 3}}, "devices": [["A", 5000]]},
+      "ops": [{"kind": "quiz", "deviceId": "A", "seq": 3, "cardId": "t01", "correct": true}],
+      "results": ["duplicate"],
+      "expect": {"version": 9, "quiz": {"t01": {"seen": 5, "correct": 3}}, "devices": [["A", 5000]]}
+    },
+    {
+      "name": "an unknown device that does not start at seq 1 is expired, not applied",
+      "initial": {"version": 4, "devices": [["B", 4]]},
+      "ops": [{"kind": "quiz", "deviceId": "A", "seq": 7, "cardId": "t01", "correct": true}],
+      "results": ["expired"],
+      "expect": {"version": 4, "quiz": {}, "devices": [["B", 4]]}
+    },
+    {
+      "name": "an unknown device starting at seq 1 may continue within the same batch",
+      "initial": {},
+      "ops": [
+        {"kind": "status", "deviceId": "A", "seq": 1, "cardId": "t01", "status": "known", "baseRev": 0},
+        {"kind": "quiz", "deviceId": "A", "seq": 2, "cardId": "t01", "correct": true}
+      ],
+      "results": ["applied", "applied"],
+      "expect": {"devices": [["A", 2]], "quiz": {"t01": {"seen": 1, "correct": 1}}}
+    },
+    {
+      "name": "a gap in a known device's sequence is accepted and advances the high-water mark",
+      "initial": {"version": 1, "devices": [["A", 2]]},
+      "ops": [{"kind": "quiz", "deviceId": "A", "seq": 5, "cardId": "t01", "correct": true}],
+      "results": ["applied"],
+      "expect": {"devices": [["A", 5]], "quiz": {"t01": {"seen": 1, "correct": 1}}}
+    },
+    {
+      "name": "a stale op still advances the sequence, so its retry is a duplicate",
+      "initial": {"version": 5, "cards": {"t01": {"status": "known", "rev": 3}}, "devices": [["A", 1]]},
+      "ops": [{"kind": "status", "deviceId": "A", "seq": 2, "cardId": "t01", "status": "learning", "baseRev": 1}],
+      "results": ["stale"],
+      "expect": {"version": 6, "cards": {"t01": {"status": "known", "rev": 3}}, "devices": [["A", 2]]}
+    },
+    {
+      "name": "retry of that stale op afterwards is a duplicate and changes nothing",
+      "initial": {"version": 6, "cards": {"t01": {"status": "known", "rev": 3}}, "devices": [["A", 2]]},
+      "ops": [{"kind": "status", "deviceId": "A", "seq": 2, "cardId": "t01", "status": "learning", "baseRev": 1}],
+      "results": ["duplicate"],
+      "expect": {"version": 6, "cards": {"t01": {"status": "known", "rev": 3}}}
+    },
+    {
+      "name": "an applying device moves to the most-recently-used end",
+      "initial": {"version": 1, "devices": [["A", 1], ["B", 1]]},
+      "ops": [{"kind": "quiz", "deviceId": "A", "seq": 2, "cardId": "t01", "correct": true}],
+      "results": ["applied"],
+      "expect": {"devices": [["B", 1], ["A", 2]]}
+    },
+    {
+      "name": "the 11th device evicts the least-recently-used one",
+      "initial": {"version": 1, "devices": [["d0", 1], ["d1", 1], ["d2", 1], ["d3", 1], ["d4", 1], ["d5", 1], ["d6", 1], ["d7", 1], ["d8", 1], ["d9", 1]]},
+      "ops": [{"kind": "quiz", "deviceId": "dNew", "seq": 1, "cardId": "t01", "correct": true}],
+      "results": ["applied"],
+      "expect": {"devices": [["d1", 1], ["d2", 1], ["d3", 1], ["d4", 1], ["d5", 1], ["d6", 1], ["d7", 1], ["d8", 1], ["d9", 1], ["dNew", 1]]}
+    },
+    {
+      "name": "an evicted device replaying a later seq is rejected as expired (safe)",
+      "initial": {"version": 2, "quiz": {"t01": {"seen": 1, "correct": 1}}, "devices": [["d1", 1], ["d2", 1], ["d3", 1], ["d4", 1], ["d5", 1], ["d6", 1], ["d7", 1], ["d8", 1], ["d9", 1], ["dNew", 1]]},
+      "ops": [{"kind": "quiz", "deviceId": "d0", "seq": 4, "cardId": "t01", "correct": true}],
+      "results": ["expired"],
+      "expect": {"version": 2, "quiz": {"t01": {"seen": 1, "correct": 1}}}
+    },
+    {
+      "name": "KNOWN LIMIT: an evicted device replaying seq 1 is indistinguishable from a new device and applies again",
+      "initial": {"version": 2, "quiz": {"t01": {"seen": 1, "correct": 1}}, "devices": [["d1", 1], ["d2", 1], ["d3", 1], ["d4", 1], ["d5", 1], ["d6", 1], ["d7", 1], ["d8", 1], ["d9", 1], ["dNew", 1]]},
+      "ops": [{"kind": "quiz", "deviceId": "d0", "seq": 1, "cardId": "t01", "correct": true}],
+      "results": ["applied"],
+      "expect": {"quiz": {"t01": {"seen": 2, "correct": 2}}}
+    }
+  ]
+}
