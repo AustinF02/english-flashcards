@@ -77,7 +77,7 @@ export function buildQuestion(
   const prompt =
     kind === "meaning" ? card.term
     : kind === "reverse" ? card.ja
-    : card.term; // listening: UI plays audio; prompt shown as the term fallback
+    : ""; // listening: the audio clip is the only cue — never print the term (the answer)
 
   const options = shuffle([answer, ...distractorValues], rand);
   return { card, kind, prompt, options, answer };

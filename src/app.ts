@@ -13,8 +13,9 @@ import { completeLogin, getSession, isExpired, signOut, startLogin } from "./aut
 import { buildQuiz, scoreQuiz, isCorrect } from "./quiz";
 import type { QuizQuestion } from "./quiz";
 import { play } from "./audio";
+import { loadHistory, recordQuiz } from "./quizHistory";
 
-type Screen = "decks" | "study" | "quiz" | "quiz-result";
+type Screen = "decks" | "study" | "quiz" | "quiz-result" | "signin" | "history";
 
 const store = new LocalStore();
 let progress: Progress = store.load();
@@ -104,7 +105,7 @@ function renderDecks(): string {
         const learned = learnedCount(d.id);
         const pct = Math.round((learned / total) * 100);
         return `
-        <button class="deck ${i === 0 ? "d1" : "d2"}" data-deck="${d.id}">
+        <button class="deck d${i + 1}" data-deck="${d.id}">
           <span class="stripe" aria-hidden="true"></span>
           <h3>${esc(d.title)}</h3>
           <p>${esc(d.blurb)}</p>
@@ -117,6 +118,7 @@ function renderDecks(): string {
       }).join("")}
     </div>
     ${renderAccount()}
+    <button class="link hist-link" data-nav="history">View quiz history</button>
   </section>`;
 }
 
@@ -129,7 +131,9 @@ const SYNC_TEXT: Record<SyncState | "idle", string> = {
   deleted: "This account was deleted. Progress is no longer saved.",
 };
 
-/** Says exactly what is true: device-only, or signed in with a real sync state. */
+/** Says exactly what is true: device-only, or signed in with a real sync state.
+ *  The sign-in / sign-out control itself now lives in the header (see renderHeaderAuth);
+ *  this panel only explains the current storage/sync state. */
 function renderAccount(): string {
   if (!cfg) {
     return `<p class="mode-note" data-mode="device">Progress is saved <strong>on this device only</strong>. Account sync is not available in this build.</p>`;
@@ -137,12 +141,81 @@ function renderAccount(): string {
   const sess = getSession();
   if (!sess || isExpired(sess.expiresAt, Date.now())) {
     return `<div class="mode-note" data-mode="signed-out">
-      <p>Progress is saved on this device. Sign in to keep it on every device.</p>
-      <button class="btn primary block" data-act="signin">Sign in</button></div>`;
+      <p>Progress is saved on this device. Sign in to keep it on every device.</p></div>`;
   }
   return `<div class="mode-note" data-mode="cloud">
-    <p role="status" data-sync="${syncState}">${SYNC_TEXT[syncState]}${syncNote ? " " + esc(syncNote) : ""}</p>
-    <button class="btn ghost block" data-act="signout">Sign out</button></div>`;
+    <p role="status" data-sync="${syncState}">${SYNC_TEXT[syncState]}${syncNote ? " " + esc(syncNote) : ""}</p></div>`;
+}
+
+/** The header auth control: compact Sign in / Sign out, or nothing in device-only mode.
+ *  "Sign in" opens the branded in-app sign-in screen, which then hands off to the
+ *  Cognito hosted UI for the actual authentication (secure Auth Code + PKCE flow). */
+function renderHeaderAuth(): string {
+  if (!cfg) return "";
+  const sess = getSession();
+  const signedIn = !!sess && !isExpired(sess.expiresAt, Date.now());
+  return signedIn
+    ? `<button class="btn ghost compact" data-act="signout">Sign out</button>`
+    : `<button class="btn primary compact" data-nav="signin">Sign in</button>`;
+}
+
+/** Quiz history screen: past completed quizzes, latest to oldest (device-local). */
+function renderHistory(): string {
+  const entries = loadHistory();
+  const fmtDate = (ms: number): string => {
+    const d = new Date(ms);
+    return d.toLocaleString(undefined, {
+      year: "numeric", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  };
+  const deckTitle = (id: Deck): string => DECKS.find((d) => d.id === id)?.title ?? id;
+
+  const rows = entries.map((e) => {
+    const pct = e.total > 0 ? Math.round((e.correct / e.total) * 100) : 0;
+    const tone = pct === 100 ? "ok" : pct >= 60 ? "" : "bad";
+    return `
+      <li class="hist-row">
+        <div class="hist-main">
+          <span class="hist-deck">${esc(deckTitle(e.deck))}</span>
+          <span class="hist-when">${esc(fmtDate(e.at))}</span>
+        </div>
+        <span class="hist-score ${tone}">${e.correct} / ${e.total}<span class="hist-pct">${pct}%</span></span>
+      </li>`;
+  }).join("");
+
+  return `
+  <section aria-labelledby="h-history">
+    <div class="topbar">
+      <button class="link" data-nav="decks" aria-label="Back to decks">← Decks</button>
+    </div>
+    <h2 class="sec-title" id="h-history">Quiz history</h2>
+    ${entries.length
+      ? `<ul class="hist-list">${rows}</ul>`
+      : `<p class="mode-note" data-mode="device">No quizzes yet. Finish a quiz and it will show up here, newest first. History is kept on this device.</p>`}
+  </section>`;
+}
+
+/** Branded sign-in screen (matches mockups/login.html). The primary button hands off to the
+ *  Cognito hosted UI via startLogin — this screen never collects a password itself. */
+function renderSignin(): string {
+  return `
+  <section class="login" aria-labelledby="h-signin">
+    <div class="topbar">
+      <button class="link" data-nav="decks" aria-label="Back to decks">← Back</button>
+    </div>
+    <div class="login-card">
+      <div class="lanyard" aria-hidden="true"></div>
+      <h1 id="h-signin" class="login-title">Sign in</h1>
+      <p class="login-sub">Sign in to sync your study progress across devices.</p>
+      <button class="btn primary block" data-act="signin">Continue to sign in</button>
+      <div class="divider">invite only</div>
+      <p class="mode-note" data-mode="signed-out">
+        Accounts are created by invitation. There is no public sign-up. Without an account you can
+        keep studying and your progress stays saved on this device.
+      </p>
+    </div>
+  </section>`;
 }
 
 function renderStudy(): string {
@@ -215,7 +288,7 @@ function renderQuiz(): string {
     </div>
     <div class="q">
       <h4>${kindLabel}</h4>
-      <p class="prompt" lang="${q.kind === "reverse" ? "ja" : "en"}">${esc(q.prompt)}</p>
+      ${q.prompt ? `<p class="prompt" lang="${q.kind === "reverse" ? "ja" : "en"}">${esc(q.prompt)}</p>` : ""}
       ${q.kind === "listening" ? audioBtn(q.card.audioTerm, "Play audio") : ""}
       <div role="group" aria-label="Answer choices">
       ${q.options.map((opt, i) => {
@@ -259,6 +332,7 @@ function renderResult(): string {
     ${missed.length ? `<button class="btn primary block" data-act="retry">Retry missed (${missed.length})</button>` : ""}
     <button class="btn block ghost" data-nav="study">Back to study</button>
     <button class="btn block ghost" data-nav="decks">Choose another deck</button>
+    <button class="btn block ghost" data-nav="history">View quiz history</button>
   </section>`;
 }
 
@@ -269,8 +343,12 @@ function render(): void {
     state.screen === "decks" ? renderDecks()
     : state.screen === "study" ? renderStudy()
     : state.screen === "quiz" ? renderQuiz()
+    : state.screen === "signin" ? renderSignin()
+    : state.screen === "history" ? renderHistory()
     : renderResult();
   root().innerHTML = html;
+  const slot = document.getElementById("authSlot");
+  if (slot) slot.innerHTML = renderHeaderAuth();
 }
 
 function startQuiz(cards: Card[]): void {
@@ -281,7 +359,8 @@ function startQuiz(cards: Card[]): void {
   state.screen = "quiz";
 }
 
-root().addEventListener("click", (e) => {
+// Delegated on document so both the in-app content and the header auth control are handled.
+document.addEventListener("click", (e) => {
   const el = e.target as HTMLElement;
   const btn = el.closest("button");
   if (!btn) return;
@@ -291,6 +370,8 @@ root().addEventListener("click", (e) => {
   const nav = btn.dataset.nav;
   if (nav === "decks") { state.screen = "decks"; render(); return; }
   if (nav === "study") { state.screen = "study"; state.flipped = false; render(); return; }
+  if (nav === "signin") { state.screen = "signin"; render(); return; }
+  if (nav === "history") { state.screen = "history"; render(); return; }
 
   const deck = btn.dataset.deck as Deck | undefined;
   if (deck) {
@@ -310,8 +391,14 @@ root().addEventListener("click", (e) => {
     case "signin": if (cfg) void startLogin(cfg.auth); break;
     case "signout": if (cfg) signOut(cfg.auth); break;
     case "qnext":
-      if (state.quizIndex === state.quiz.length - 1) state.screen = "quiz-result";
-      else { state.quizIndex++; state.quizChosen = null; }
+      if (state.quizIndex === state.quiz.length - 1) {
+        state.screen = "quiz-result";
+        // Record this completed quiz to the local history log (newest first).
+        if (state.deck) {
+          const r = scoreQuiz(state.quizAnswers);
+          recordQuiz({ deck: state.deck, total: r.total, correct: r.correct });
+        }
+      } else { state.quizIndex++; state.quizChosen = null; }
       render(); break;
     case "retry": {
       const result = scoreQuiz(state.quizAnswers);

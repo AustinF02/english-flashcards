@@ -4,18 +4,19 @@ import { validateCards } from "../src/validate";
 import type { Card } from "../src/types";
 
 describe("content validation (Stage 0)", () => {
-  it("the 40 shipped cards are valid", () => {
+  it("the 60 shipped cards are valid", () => {
     expect(validateCards(CARDS)).toEqual([]);
   });
 
-  it("has exactly 40 cards, 20 per deck", () => {
-    expect(CARDS).toHaveLength(40);
+  it("has exactly 60 cards, 20 per deck", () => {
+    expect(CARDS).toHaveLength(60);
     expect(CARDS.filter((c) => c.deck === "aws-technical")).toHaveLength(20);
     expect(CARDS.filter((c) => c.deck === "conference-conversation")).toHaveLength(20);
+    expect(CARDS.filter((c) => c.deck === "west-coast-slang")).toHaveLength(20);
   });
 
   it("each deck is 10 Joanna / 10 Joey", () => {
-    for (const deck of ["aws-technical", "conference-conversation"] as const) {
+    for (const deck of ["aws-technical", "conference-conversation", "west-coast-slang"] as const) {
       const inDeck = CARDS.filter((c) => c.deck === deck);
       expect(inDeck.filter((c) => c.voice === "Joanna")).toHaveLength(10);
       expect(inDeck.filter((c) => c.voice === "Joey")).toHaveLength(10);

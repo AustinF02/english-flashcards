@@ -34,6 +34,15 @@ describe("quiz generation", () => {
   it("throws when the pool is too small for 4 options", () => {
     expect(() => buildQuiz(pool.slice(0, 3), 2, 1)).toThrow();
   });
+
+  it("listening prompt never reveals the term (answer) — audio is the only cue", () => {
+    const rand = rng(11);
+    const q = buildQuestion(pool[0]!, pool, "listening", rand);
+    expect(q.answer).toBe(pool[0]!.term);
+    // The on-screen prompt must not show the English term; only the audio clip gives it away.
+    expect(q.prompt).toBe("");
+    expect(q.prompt).not.toContain(q.answer);
+  });
 });
 
 describe("scoring", () => {

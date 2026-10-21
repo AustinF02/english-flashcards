@@ -3,8 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A small, fast flashcards web app for studying English vocabulary used at AWS conferences
-(technical terms and conference small-talk). Study and quiz work in the browser with no account;
-an optional invite-only sign-in adds progress sync across devices.
+(technical terms and conference small-talk) plus casual West Coast slang. Study and quiz work in
+the browser with no account; an optional invite-only sign-in adds progress sync across devices.
 
 **Live demo:** https://d2ts4pdy7hp7wu.cloudfront.net
 
@@ -18,9 +18,15 @@ are used here only descriptively.
 
 ## Features
 
-- Two decks: AWS technical terms and conference conversation.
+- Three decks: AWS technical terms, practical conference conversation, and West Coast slang
+  (casual California / Pacific Northwest expressions). 20 cards each (60 total).
 - Flip cards (term ⇄ Japanese meaning + example sentence).
-- Multiple-choice quizzes (meaning, reverse, and listening) with scoring and "retry missed".
+- Multiple-choice quizzes (meaning, reverse, and listening) with scoring and "retry missed". The
+  listening question plays audio only and never prints the term on screen.
+- A quiz history page listing your past completed quizzes (deck, date/time, score), newest first.
+  History is kept on the device and is not synced.
+- A branded in-app sign-in screen that hands off to the secure Cognito hosted-UI flow; the sign-in
+  / sign-out control lives in the header.
 - Pronunciation playback from pre-generated MP3s; playback honestly reports "unavailable" rather
   than pretending when a clip is missing.
 - Progress tracking. Device-only by default; synced to your account when signed in.
@@ -34,11 +40,12 @@ This behavior is how the app is built (see `src/app.ts`, `src/config.ts`, `src/a
 - **Public study — no sign-in.** Decks, flipping, quizzes, and pronunciation all work with no
   account. Progress is saved in the browser (localStorage) on that device only. When no runtime
   `config.json` is present, the app runs in device-only mode and shows no sign-in at all.
-- **Invite-only sign-in and sync.** When a `config.json` is present, a "Sign in" action appears.
-  Sign-in uses the Cognito hosted UI (Authorization Code + PKCE; public client, no client secret).
-  After sign-in, progress syncs through a Cognito-authorized API. The user pool is configured as
-  admin-create-only, so accounts are provisioned by an administrator (invitation) — there is no
-  public self-service sign-up.
+- **Invite-only sign-in and sync.** When a `config.json` is present, a "Sign in" button appears in
+  the header and opens a branded in-app sign-in screen. That screen hands off to the Cognito hosted
+  UI for the actual authentication (Authorization Code + PKCE; public client, no client secret) —
+  the app never collects a password itself. After sign-in, progress syncs through a Cognito-authorized
+  API. The user pool is configured as admin-create-only, so accounts are provisioned by an
+  administrator (invitation) — there is no public self-service sign-up.
 
 On the live demo, unauthenticated or invalid-token reads and writes to the progress API are
 rejected with HTTP 401 (verified).
@@ -121,8 +128,9 @@ Left unchanged, the site is fully usable for public study and sign-in is simply 
 
 Designed to sit near the AWS Free Tier for light personal use:
 
-- **Audio** is a one-time generation. The generator estimates characters × Polly Standard rate and
-  refuses to run if the estimate exceeds a built-in **$1** cap. The included deck is well under that.
+- **Audio** is a one-time generation (120 clips: a term and an example for each of the 60 cards).
+  The generator estimates characters × Polly Standard rate and refuses to run if the estimate
+  exceeds a built-in **$1** cap. The included decks are well under that.
 - **Runtime** is request-driven: S3/CloudFront delivery plus occasional Lambda/DynamoDB/API Gateway
   calls for signed-in sync. There is nothing that scales with study behavior beyond fractions of a
   cent per request.

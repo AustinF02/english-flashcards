@@ -30,11 +30,13 @@ body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);li
 .deck:focus-visible{outline:none;box-shadow:var(--focus)}
 .deck .stripe{position:absolute;left:0;top:0;bottom:0;width:7px}
 .deck.d1 .stripe{background:var(--teal)} .deck.d2 .stripe{background:var(--amber)}
+.deck.d3 .stripe{background:var(--slate)}
 .deck h3{margin:0 0 4px;font-size:17px} .deck p{margin:0;font-size:13px;color:var(--slate)}
 .deck .meta{margin-top:12px;display:flex;gap:12px;font-size:12px;color:var(--slate);align-items:center}
 .bar{flex:1;height:6px;background:#E6EAF1;border-radius:99px;overflow:hidden}
 .bar span{display:block;height:100%;background:var(--teal)}
 .deck.d2 .bar span{background:var(--amber)}
+.deck.d3 .bar span{background:var(--slate)}
 .mode-note{font-size:12px;color:var(--slate);margin-top:16px;padding:10px 12px;background:#E9EDF4;border-radius:var(--radius-sm)}
 
 .stage{perspective:1200px;margin-top:4px}
@@ -57,6 +59,9 @@ body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);li
 .btn:focus-visible{outline:none;box-shadow:var(--focus)}
 .btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
 .btn.block{width:100%;margin-top:12px}
+.btn.compact{width:auto;min-height:0;padding:7px 14px;font-size:13px;margin-top:10px}
+.auth-slot{display:flex;align-items:center}
+.auth-slot .btn.compact{margin-top:0}
 .btn.ghost{background:transparent}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .controls{display:flex;gap:10px;margin-top:12px}
@@ -65,6 +70,33 @@ body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);li
 .got{border-color:#A9D4BA;color:var(--ok);background:#EEF7F1}
 .nav{display:flex;gap:10px;margin-top:10px}
 .nav .btn{flex:1}
+
+/* Branded sign-in screen (see renderSignin in app.ts) */
+.login-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:24px;margin-top:4px}
+.login-title{font-size:22px;margin:0 0 4px}
+.login-sub{font-size:13px;color:var(--slate);margin:0 0 20px}
+.login-card .btn.block{margin-top:4px}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--slate);font-size:12px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* Quiz history screen */
+.hist-link{display:inline-block;margin-top:14px}
+.hist-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.hist-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-sm);
+  padding:12px 14px}
+.hist-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hist-deck{font-size:14px;font-weight:600}
+.hist-when{font-size:12px;color:var(--slate)}
+.hist-score{font-size:15px;font-weight:600;white-space:nowrap;display:flex;align-items:baseline;gap:8px}
+.hist-score.ok{color:var(--ok)} .hist-score.bad{color:var(--err)}
+.hist-pct{font-size:11px;font-weight:600;color:var(--slate)}
+
+/* Site footer */
+.site-foot{max-width:460px;margin:24px auto 0;padding:16px;text-align:center;
+  font-size:11px;color:var(--slate)}
+@media(min-width:720px){ .site-foot{max-width:560px} }
 .quizstart{margin-top:16px}
 
 .audio{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;border-radius:99px;

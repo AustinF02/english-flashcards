@@ -1,5 +1,5 @@
 export type Voice = "Joanna" | "Joey";
-export type Deck = "aws-technical" | "conference-conversation";
+export type Deck = "aws-technical" | "conference-conversation" | "west-coast-slang";
 export type Kind = "word" | "phrase";
 export type CardStatus = "learning" | "known";
 

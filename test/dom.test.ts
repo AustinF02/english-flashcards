@@ -40,7 +40,7 @@ describe("app DOM flow", () => {
   it("renders deck selection with both decks", async () => {
     await boot();
     const decks = document.querySelectorAll("button.deck");
-    expect(decks).toHaveLength(2);
+    expect(decks).toHaveLength(3);
     expect(document.querySelector(".mode-note")!.textContent).toContain("on this device only");
     expect(document.querySelector(".mode-note")!.getAttribute("data-mode")).toBe("device");
     expect(document.body.textContent).not.toContain("Sign in"); // no fake sign-in without a config
@@ -73,5 +73,36 @@ describe("app DOM flow", () => {
     expect(document.querySelector(".feedback")).not.toBeNull();
     // options disabled after answering
     expect((document.querySelector("button.opt") as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("records a completed quiz and shows it on the history screen, newest first", async () => {
+    await boot();
+    // Drive a full quiz to completion: answer each question, then advance.
+    (document.querySelector('button[data-deck="aws-technical"]') as HTMLButtonElement).click();
+    (document.querySelector('button[data-act="quiz"]') as HTMLButtonElement).click();
+    // Loop: pick first option, then click the qnext button, until we reach the result.
+    for (let guard = 0; guard < 20; guard++) {
+      const result = document.querySelector('[id="h-res"]');
+      if (result) break;
+      const opt = document.querySelector("button.opt") as HTMLButtonElement | null;
+      if (opt) opt.click();
+      const qnext = document.querySelector('button[data-act="qnext"]') as HTMLButtonElement | null;
+      if (qnext) qnext.click();
+    }
+    // Now on the result screen — history entry should be persisted.
+    expect(localStorage.getItem("ef_quiz_history_v1")).toContain('"deck":"aws-technical"');
+
+    // Open the history screen and confirm an entry is listed.
+    (document.querySelector('button[data-nav="history"]') as HTMLButtonElement).click();
+    const rows = document.querySelectorAll(".hist-row");
+    expect(rows.length).toBeGreaterThanOrEqual(1);
+    expect(document.querySelector(".hist-deck")!.textContent).toBeTruthy();
+  });
+
+  it("shows an empty-state on the history screen before any quiz", async () => {
+    await boot();
+    (document.querySelector('button[data-nav="history"]') as HTMLButtonElement).click();
+    expect(document.querySelectorAll(".hist-row")).toHaveLength(0);
+    expect(document.body.textContent).toContain("No quizzes yet");
   });
 });
