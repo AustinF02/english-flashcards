@@ -105,7 +105,7 @@ function renderDecks(): string {
         const learned = learnedCount(d.id);
         const pct = Math.round((learned / total) * 100);
         return `
-        <button class="deck d${i + 1}" data-deck="${d.id}">
+        <button class="deck d${(i % 3) + 1}" data-deck="${d.id}">
           <span class="stripe" aria-hidden="true"></span>
           <h3>${esc(d.title)}</h3>
           <p>${esc(d.blurb)}</p>

@@ -12,8 +12,8 @@ const MAX_EXAMPLE_JA = 120;
 
 /**
  * Stage 0 content validation (spec §13). Does NOT require audio files to exist.
- * Checks schema, uniqueness, length caps, voice enum, and the 10/10 per-deck,
- * 20/20 overall Joanna/Joey balance.
+ * Checks schema, uniqueness, length caps, voice enum, and equal Joanna/Joey
+ * counts within each deck.
  */
 export function validateCards(cards: Card[]): ValidationIssue[] {
   const issues: ValidationIssue[] = [];

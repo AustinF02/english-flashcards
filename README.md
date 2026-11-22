@@ -2,8 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A small, fast flashcards web app for studying English vocabulary used at AWS conferences
-(technical terms and conference small-talk) plus casual West Coast slang. Study and quiz work in
+A small, fast flashcards web app for studying AWS conference vocabulary, West Coast slang,
+U.S. arrivals, restaurant conversations, and everyday small talk. Study and quiz work in
 the browser with no account; an optional invite-only sign-in adds progress sync across devices.
 
 **Live demo:** https://d2ts4pdy7hp7wu.cloudfront.net
@@ -18,8 +18,8 @@ are used here only descriptively.
 
 ## Features
 
-- Three decks: AWS technical terms, practical conference conversation, and West Coast slang
-  (casual California / Pacific Northwest expressions). 20 cards each (60 total).
+- Six decks with 140 cards: AWS technical terms (20), conference conversations (20),
+  West Coast slang (20), arriving in the U.S. (30), restaurants and drinks (30), and small talk (20).
 - Flip cards (term ⇄ Japanese meaning + example sentence).
 - Multiple-choice quizzes (meaning, reverse, and listening) with scoring and "retry missed". The
   listening question plays audio only and never prints the term on screen.
@@ -128,7 +128,7 @@ Left unchanged, the site is fully usable for public study and sign-in is simply 
 
 Designed to sit near the AWS Free Tier for light personal use:
 
-- **Audio** is a one-time generation (120 clips: a term and an example for each of the 60 cards).
+- **Audio** is a one-time generation (280 clips: a term and an example for each of the 140 cards).
   The generator estimates characters × Polly Standard rate and refuses to run if the estimate
   exceeds a built-in **$1** cap. The included decks are well under that.
 - **Runtime** is request-driven: S3/CloudFront delivery plus occasional Lambda/DynamoDB/API Gateway

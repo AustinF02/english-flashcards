@@ -6,7 +6,7 @@ SAFETY
   * Clips that already exist, are non-empty, and match the current voice+text are
     REUSED; nothing is regenerated unnecessarily.
   * Credentials come from the caller's environment only. They are never read,
-    printed, or logged here. The account/identity is printed so you can see it.
+  printed, or logged here. The account is checked without displaying identifiers.
 
 Usage
   EXPECTED_ACCOUNT=<your-aws-account-id> python3 scripts/generate_audio.py             # dry run
@@ -47,7 +47,7 @@ def load_cards() -> list[dict]:
 
 
 def assert_voice_split(cards: list[dict]) -> None:
-    """20 Joanna / 20 Joey overall and 10/10 inside every deck; only approved voices."""
+    """Equal Joanna/Joey counts overall and inside each deck; only approved voices."""
     bad = {c["voice"] for c in cards} - VOICES
     if bad:
         sys.exit(f"ABORT: unapproved voice(s) {sorted(bad)}")
@@ -132,13 +132,13 @@ def _boto3():
 
 
 def verify_target() -> object:
-    """Print who we are and prove the voices exist in-region. Never prints credentials."""
+    """Verify the expected account and regional voices without logging identifiers."""
     boto3 = _boto3()
     sts = boto3.client("sts", region_name=REGION)
     who = sts.get_caller_identity()
     expected = os.environ.get("EXPECTED_ACCOUNT", "").strip()
     assert_expected_account(who["Account"], expected)   # refuse before any billable call
-    print(f"Account {who['Account']}  Identity {who['Arn'].split('/')[-1]}  Region {REGION}")
+    print(f"Expected AWS account verified. Region {REGION}")
     polly = boto3.client("polly", region_name=REGION)
     found: set[str] = set()
     for v in polly.describe_voices(Engine=ENGINE, LanguageCode="en-US").get("Voices", []):

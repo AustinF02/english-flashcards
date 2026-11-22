@@ -29,6 +29,14 @@ describe("quiz history", () => {
     expect(h[0]).toEqual({ at: 1000, deck: "aws-technical", total: 10, correct: 7 });
   });
 
+  it.each(["arriving-in-the-us", "restaurants-and-drinks", "small-talk"] as const)(
+    "keeps completed quizzes for the %s deck",
+    (deck) => {
+      recordQuiz({ deck, total: 20, correct: 15 }, s, 1000);
+      expect(loadHistory(s)).toEqual([{ at: 1000, deck, total: 20, correct: 15 }]);
+    },
+  );
+
   it("returns entries latest-to-oldest", () => {
     recordQuiz({ deck: "aws-technical", total: 10, correct: 5 }, s, 1000);
     recordQuiz({ deck: "conference-conversation", total: 8, correct: 8 }, s, 3000);

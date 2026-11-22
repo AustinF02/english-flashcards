@@ -63,8 +63,9 @@ class TestPackagedLambda(unittest.TestCase):
         return e
 
     def test_the_package_has_the_deck_so_card_ids_validate(self):
-        self.assertEqual(len(self.index._VALID_IDS), 40)
-        self.assertIn("t01", self.index._VALID_IDS)
+        self.assertEqual(len(self.index._VALID_IDS), 140)
+        for card_id in ("t01", "s20", "i01", "i30", "r01", "r30", "m01", "m20"):
+            self.assertIn(card_id, self.index._VALID_IDS)
 
     def test_get_reads_consistently_and_returns_the_stored_doc(self):
         doc = {"userId": "user-A", "version": 3, "state": "active", "cards": {}, "quiz": {}, "devices": []}
