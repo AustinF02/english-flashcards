@@ -40,9 +40,10 @@ body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);li
 .mode-note{font-size:12px;color:var(--slate);margin-top:16px;padding:10px 12px;background:#E9EDF4;border-radius:var(--radius-sm)}
 
 .stage{perspective:1200px;margin-top:4px}
-.card{position:relative;width:100%;min-height:320px;transition:transform .5s cubic-bezier(.2,.7,.2,1);transform-style:preserve-3d}
+.card{position:relative;display:grid;width:100%;min-height:320px;transition:transform .5s cubic-bezier(.2,.7,.2,1);transform-style:preserve-3d}
 .card.flipped{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden;background:var(--paper);border:1px solid var(--line);
+/* Both faces size the same grid cell so long translations fit without overlapping controls. */
+.face{position:relative;grid-area:1/1;inset:0;backface-visibility:hidden;background:var(--paper);border:1px solid var(--line);
   border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column}
 .face.back{transform:rotateY(180deg)}
 .lanyard{height:8px;border-radius:99px;background:var(--teal);width:60%;margin-bottom:18px}

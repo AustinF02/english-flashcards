@@ -2,25 +2,35 @@ import { describe, it, expect } from "vitest";
 import { CARDS } from "../src/cards";
 import { validateCards } from "../src/validate";
 import type { Card } from "../src/types";
+import exportedCards from "../cards.json";
+import publicCards from "../public/cards.json";
 
 describe("content validation (Stage 0)", () => {
-  it("the 60 shipped cards are valid", () => {
+  it("the 140 shipped cards are valid", () => {
     expect(validateCards(CARDS)).toEqual([]);
   });
 
-  it("has exactly 60 cards, 20 per deck", () => {
-    expect(CARDS).toHaveLength(60);
+  it("ships all six decks with the requested card counts", () => {
+    expect(CARDS).toHaveLength(140);
     expect(CARDS.filter((c) => c.deck === "aws-technical")).toHaveLength(20);
     expect(CARDS.filter((c) => c.deck === "conference-conversation")).toHaveLength(20);
     expect(CARDS.filter((c) => c.deck === "west-coast-slang")).toHaveLength(20);
+    expect(CARDS.filter((c) => c.deck === "arriving-in-the-us")).toHaveLength(30);
+    expect(CARDS.filter((c) => c.deck === "restaurants-and-drinks")).toHaveLength(30);
+    expect(CARDS.filter((c) => c.deck === "small-talk")).toHaveLength(20);
   });
 
-  it("each deck is 10 Joanna / 10 Joey", () => {
-    for (const deck of ["aws-technical", "conference-conversation", "west-coast-slang"] as const) {
+  it("balances Joanna and Joey within every deck", () => {
+    for (const deck of new Set(CARDS.map((c) => c.deck))) {
       const inDeck = CARDS.filter((c) => c.deck === deck);
-      expect(inDeck.filter((c) => c.voice === "Joanna")).toHaveLength(10);
-      expect(inDeck.filter((c) => c.voice === "Joey")).toHaveLength(10);
+      expect(inDeck.filter((c) => c.voice === "Joanna")).toHaveLength(inDeck.length / 2);
+      expect(inDeck.filter((c) => c.voice === "Joey")).toHaveLength(inDeck.length / 2);
     }
+  });
+
+  it("exports the same cards for the website and Lambda validation", () => {
+    expect(exportedCards).toEqual(CARDS);
+    expect(publicCards).toEqual(CARDS);
   });
 
   it("the LinkedIn correction is present and the old phrasing is gone", () => {

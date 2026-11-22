@@ -1,4 +1,5 @@
 import type { Deck } from "./types";
+import { DECKS } from "./cards";
 
 /**
  * Local-only quiz history log. This is intentionally separate from the synced
@@ -24,7 +25,7 @@ function isEntry(v: unknown): v is QuizHistoryEntry {
   const e = v as Record<string, unknown>;
   return (
     typeof e.at === "number" &&
-    (e.deck === "aws-technical" || e.deck === "conference-conversation" || e.deck === "west-coast-slang") &&
+    DECKS.some((deck) => deck.id === e.deck) &&
     typeof e.total === "number" &&
     typeof e.correct === "number"
   );

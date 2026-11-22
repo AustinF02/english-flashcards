@@ -37,13 +37,25 @@ async function boot() {
 }
 
 describe("app DOM flow", () => {
-  it("renders deck selection with both decks", async () => {
+  it("renders all six decks", async () => {
     await boot();
     const decks = document.querySelectorAll("button.deck");
-    expect(decks).toHaveLength(3);
+    expect(decks).toHaveLength(6);
     expect(document.querySelector(".mode-note")!.textContent).toContain("on this device only");
     expect(document.querySelector(".mode-note")!.getAttribute("data-mode")).toBe("device");
     expect(document.body.textContent).not.toContain("Sign in"); // no fake sign-in without a config
+  });
+
+  it.each([
+    ["arriving-in-the-us", 30],
+    ["restaurants-and-drinks", 30],
+    ["small-talk", 20],
+  ])("opens the %s deck with all its cards", async (deck, count) => {
+    await boot();
+    (document.querySelector(`button[data-deck="${deck}"]`) as HTMLButtonElement).click();
+    expect(document.querySelector(".counter")!.textContent).toBe(`1 / ${count}`);
+    (document.querySelector('button[data-act="flip"]') as HTMLButtonElement).click();
+    expect(document.querySelector(".meaning")!.textContent!.trim().length).toBeGreaterThan(0);
   });
 
   it("opens a deck, flips a card, and shows Japanese on the back", async () => {
