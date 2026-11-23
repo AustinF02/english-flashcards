@@ -1,5 +1,5 @@
 import type { Card, Deck } from "./types";
-import { DECKS, cardsByDeck } from "./cards";
+import { CARDS, DECKS, cardsByDeck } from "./cards";
 import { applyOps, emptyProgress, nextLocalSeq } from "./progress";
 import type { Progress, ProgressOp } from "./progress";
 import { loadDevice, reconcileDevice, saveDevice } from "./device";
@@ -97,21 +97,38 @@ async function onAudio(path: string, btn: HTMLButtonElement): Promise<void> {
 
 function renderDecks(): string {
   return `
-  <section aria-labelledby="h-decks">
-    <h2 class="sec-title" id="h-decks">Choose a deck</h2>
+  <section class="library" aria-labelledby="h-decks">
+    <div class="hero">
+      <div>
+        <p class="eyebrow">English flashcards</p>
+        <h1>English for the conference.</h1>
+        <div class="hero-rule" aria-hidden="true"><span>conference</span></div>
+        <p class="hero-description">Practice English for AWS talks, hallway chats, and the trip in between.</p>
+      </div>
+      <div class="hero-preview">
+        <button type="button" class="hero-card" data-deck="aws-technical">
+          <span class="hero-card-label">AWS technical discussions</span>
+          <strong>idempotent</strong>
+          <span class="hero-card-action">Try this card</span>
+        </button>
+      </div>
+    </div>
+    <div class="library-heading">
+      <h2 class="sec-title" id="h-decks">Choose a deck</h2>
+      <p>${DECKS.length} decks · ${CARDS.length} cards</p>
+    </div>
     <div class="decks">
-      ${DECKS.map((d, i) => {
+      ${DECKS.map((d) => {
         const total = cardsByDeck(d.id).length;
         const learned = learnedCount(d.id);
         const pct = Math.round((learned / total) * 100);
         return `
-        <button class="deck d${(i % 3) + 1}" data-deck="${d.id}">
-          <span class="stripe" aria-hidden="true"></span>
+        <button type="button" class="deck" data-deck="${d.id}">
           <h3>${esc(d.title)}</h3>
           <p>${esc(d.blurb)}</p>
           <div class="meta">
             <span>${total} cards</span>
-            <span class="bar"><span style="width:${pct}%"></span></span>
+            <span class="bar" aria-hidden="true"><span style="width:${pct}%"></span></span>
             <span>${learned} / ${total} learned</span>
           </div>
         </button>`;
@@ -224,7 +241,7 @@ function renderStudy(): string {
   const status = progress.cards[card.id]?.status;
   const back = state.flipped;
   return `
-  <section aria-labelledby="h-study">
+  <section class="study" aria-labelledby="h-study">
     <div class="topbar">
       <button class="link" data-nav="decks" aria-label="Back to decks">← Decks</button>
       <span class="counter">${state.index + 1} / ${state.cards.length}</span>
@@ -239,7 +256,7 @@ function renderStudy(): string {
           <div class="pron">${audioBtn(card.audioTerm, "Play term")}</div>
         </div>
         <div class="face back">
-          <div class="lanyard amber" aria-hidden="true"></div>
+          <div class="lanyard mist" aria-hidden="true"></div>
           <div class="meaning" lang="ja">${esc(card.ja)}</div>
           <p class="ex" lang="en">${esc(card.example)}</p>
           <p class="ex-ja" lang="ja">${esc(card.exampleJa)}</p>
